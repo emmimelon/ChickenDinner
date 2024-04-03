@@ -649,6 +649,7 @@ main:
    	li $s1,	MAX_ADDRESS			# loads last pixel + 1 of bitmap display to $s2
    	li $t0, DEFAULT_FRAME_RATE		# $t0 = DEFAULT_FRAME_RATE (default = 50)
    	sw $t0, frameRate			# frameRate = $t0
+   	sw $zero, seedcount
 
 #loads our start menu
 loadStartMenu:					# loads start menu screen to bitmap display
@@ -1040,6 +1041,7 @@ calculateMovement:
 	sw $t0, playerLocation		# save new position in playerLocation
 	lw $t0, glide			# if we just fell, and we have glide powerup, reset our glide
 	beqz $t0, resetGlide
+	j doneVerticalCalc
 	landed:
 	sw $zero, jumping # set to not jumping or falling
 	li $t5, 6
@@ -1353,11 +1355,19 @@ checkSeed:
 	li $t2, SEED
 	lw $t3, 0($t1)
 	beq $t3, $t2, evolve
-	lw $t3, 20($t1)
+	lw $t3, 8($t1)
+	beq $t3, $t2, evolve
+	lw $t3, 16($t1)
+	beq $t3, $t2, evolve
+	lw $t3, 512($t1)
+	beq $t3, $t2, evolve
+	lw $t3, 528($t1)
 	beq $t3, $t2, evolve
 	lw $t3, 1024($t1)
 	beq $t3, $t2, evolve
-	lw $t3, 1044($t1)
+	lw $t3, 1032($t1)
+	beq $t3, $t2, evolve
+	lw $t3, 1040($t1)
 	beq $t3, $t2, evolve
 	jr $ra
 	evolve:
