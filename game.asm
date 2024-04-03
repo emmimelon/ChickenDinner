@@ -1013,6 +1013,12 @@ calculateMovement:
 	li $t1, 256			# set jump stage to 256 (falling)
 	sw $t1, jumping
 	player_fall:
+	lw $t0, glide			# checks the glide
+	ble $t0, $zero, falling		# if we have a glide don't fall yet
+	addi $t0, $t0, -1		# reduce our glide count
+	sw $t0, glide
+	jr $ra
+	falling:
 	lw $t0, playerLocation		# regetting player location since i messed with it earlier
 	addi $t0, $t0, 1280		# checks pixels under player
 	lw $t2, 0($t0)			# gets pixel colour
@@ -1032,12 +1038,19 @@ calculateMovement:
 	lw $t0, playerLocation
 	addi $t0, $t0, 256
 	sw $t0, playerLocation		# save new position in playerLocation
-	jr $ra	# return
+	lw $t0, glide			# if we just fell, and we have glide powerup, reset our glide
+	beqz $t0, resetGlide
 	landed:
 	sw $zero, jumping # set to not jumping or falling
 	li $t5, 6
 	sw $t5, jumpCount	# refresh the jump count
-	jr $ra # return
+	bnez $t0, doneVerticalCalc
+	resetGlide:
+	li $t0, 2
+	sw $t0, glide
+	doneVerticalCalc:
+	jr $ra	# return
+	
 
 removeChicken:
 	lw $t4, lastLocation
@@ -1207,16 +1220,9 @@ checkObj: # check if any of the corners of the player are touching the door key/
 	jr $ra
 
 checkPowerup:
-	# compares the edges to the powerup location, if within, give powerup and erase it
+	# compares the edges to the powerup colour, if touched, give powerup and erase it
 	lw $t1, playerLocation
-	lw $t3, level
-	li $t2, 4
-	bne $t3, $t2, doubleJumpCheck
-	# otherwise check for glide powerup
-	la $t2, killColour
-	add $t2, $t3, $t2
-	lw $t2, 0($t2) # obtains kill colour
-
+	li $t2, WHITE	# both feather and wing are white so its ok
 	lw $t3, 0($t1)
 	beq $t3, $t2, givePowerup
 	lw $t3, 256($t1)
@@ -1235,14 +1241,36 @@ checkPowerup:
 	beq $t3, $t2, givePowerup
 	lw $t3, 1044($t1)
 	beq $t3, $t2, givePowerup
-	jr $ra # if health is not reduced, go back
+	jr $ra # if powerup not reached, go back
 	givePowerup:
-	lw $t4, health
-	addi $t4, $t4, -4 # reduce health
-	sw $t4, health
-	# restart the level
-	sw $zero, isSoy
-	j gameSetup
+	lw $t4, level
+	li $t5, 4
+	li $t6, 2
+	la $t2, levelBG
+	add $t2, $t2, $t4
+	lw $t2, 0($t2) # getting the lvl bg
+	bne $t4, $t5, giveDoubleJump	# if level 3, give double jump
+	# otherwise give glide and erase feather
+	sw $t6, glide
+	li $t4, BASE_ADDRESS
+	addi $t4, $t4, 376 # gets top left corner of feather
+	li $t5, 32 # max rows/cols
+	li $t3, 0	# let t3 be the row iterating variable
+	eraseFeather:
+		li $t6, 0 # iterating col variable
+		eraseFeatherRow:
+			sw $t2, 0($t4)
+			addi $t4, $t4, 4
+			addi $t6, $t6, 4
+			blt $t6, $t5, eraseFeatherRow # repeat if less than max col
+		addi, $t3, $t3, 4
+		sub, $t4, $t4, $t5
+   		add $t4, $t4, 256	# go to next row
+   		blt $t3, $t5, eraseFeather	# repeat if less than max row times loop
+	jr $ra
+	giveDoubleJump:
+	li $t6, 1
+	sw $t6, doublejump
 	jr $ra
 
 checkDamage:
@@ -1261,6 +1289,10 @@ checkDamage:
 	beq $t3, $t2, reduceHealth
 	lw $t3, 1024($t1)
 	beq $t3, $t2, reduceHealth
+	lw $t3, 1028($t1)
+	beq $t3, $t2, reduceHealth
+	lw $t3, 1032($t1)
+	beq $t3, $t2, reduceHealth
 	lw $t3, 12($t1)
 	beq $t3, $t2, reduceHealth
 	lw $t3, 20($t1)
@@ -1268,6 +1300,8 @@ checkDamage:
 	lw $t3, 532($t1)
 	beq $t3, $t2, reduceHealth
 	lw $t3, 1036($t1)
+	beq $t3, $t2, reduceHealth
+	lw $t3, 1040($t1)
 	beq $t3, $t2, reduceHealth
 	lw $t3, 1044($t1)
 	beq $t3, $t2, reduceHealth
@@ -1277,6 +1311,17 @@ checkDamage:
 	addi $t4, $t4, -4 # reduce health
 	sw $t4, health
 	# restart the level
+	lw $t5, level
+	li $t6, 4
+	# if the level is 2, then also reset glide, if its 3 then reset doublejump
+	bne $t5, $t6, removeDoubleJump
+	li $t6, -1
+	sw $t6, glide
+	sw $zero, isSoy
+	j gameSetup
+	removeDoubleJump:
+	li $t6, -1
+	sw $t6, doublejump
 	sw $zero, isSoy
 	j gameSetup
 
