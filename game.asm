@@ -22,7 +22,7 @@
 # 2. Multiple Levels
 # 3. Pickups, detail below
 	#Seed/egg icon: This adds one life, and evolves your chicken (changes sprite). This effect holds for the remainder of the game
-	#Soy sauce bottle: This gives you a soy sauce splatter on your chicken for the remainder of this level (no perk, just for fun)
+	#Soy sauce bottle: This gives you a soy sauce splatter on your chicken for the remainder of this game, will reset if you die on the level (no perk, just for fun)
 	#Feather: This gives you a gide effect, you fall half as fast. This effect holds for the remainder of the game, 
 		# but resets if you die in the same level of it
 		# e.g. acquire in level 2, will remain in level 3. But if you die in level 2, you will lose it and have to get it again.
@@ -31,10 +31,11 @@
 # 4. Double jump
 #
 # Link to video demonstration for final submission:
-# - (insert YouTube / MyMedia / other URL here). Make sure we can view it!
+# - https://drive.google.com/file/d/1XEbS81LWzfx39ZOhEQUMqUQy-9T5f4BC/view?usp=sharing
 #
 # Are you OK with us sharing the video with people outside course staff?
-# - yes
+# - yes, github link: https://github.com/emmimelon/ChickenDinner
+# - github is private right now, but will be public after the exam
 #
 # Any additional information that the TA needs to know:
 # - Instructions, tap to move:
