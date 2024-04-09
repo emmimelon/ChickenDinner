@@ -929,10 +929,19 @@ keypressed:
 		jr $ra
 	jump:
 		lw $t0, jumping
-		bnez $t0, ignore_jump	# Jump state must be 0 to jump (player is landed on ground)
+		beq $t0, $zero canJump	# if jump state is 0 (player is landed on ground)
+		lw $t2, doublejump	
+		li $t1, 1	 	
+		beq $t2, $t1 canDoubleJump	# otherwise, check if we have an unused double jump, jump
+		# if not then no jumping
+		jr $ra
+		canDoubleJump:
+		sw $zero, doublejump # reduce our double jump counter
+		li $t3, 6
+		sw $t3, jumpCount # refresh our jump count 
+		canJump: # set our jump
 		li $t1, -256
 		sw $t1, jumping
-		ignore_jump:
 		jr $ra
 
 calculateMovement:
@@ -1088,6 +1097,11 @@ calculateMovement:
 	sw $zero, jumping # set to not jumping or falling
 	li $t5, 6
 	sw $t5, jumpCount	# refresh the jump count
+	lw $t5, doublejump # ref
+	lw $t5, doublejump # refresh our doublejump if we have it
+	bltz $t5, doneVerticalCalc 
+	li $t5, 1
+	sw $t5 doublejump
 	bnez $t0, doneVerticalCalc
 	resetGlide:
 	li $t0, 2
@@ -1298,23 +1312,26 @@ checkPowerup:
 	sw $t6, glide
 	li $t4, BASE_ADDRESS
 	addi $t4, $t4, 376 # gets top left corner of feather
-	li $t5, 32 # max rows/cols
-	li $t3, 0	# let t3 be the row iterating variable
-	eraseFeather:
-		li $t6, 0 # iterating col variable
-		eraseFeatherRow:
-			sw $t2, 0($t4)
-			addi $t4, $t4, 4
-			addi $t6, $t6, 4
-			blt $t6, $t5, eraseFeatherRow # repeat if less than max col
-		addi, $t3, $t3, 4
-		sub, $t4, $t4, $t5
-   		add $t4, $t4, 256	# go to next row
-   		blt $t3, $t5, eraseFeather	# repeat if less than max row times loop
-	jr $ra
+	j setErasePowerup
 	giveDoubleJump:
 	li $t6, 1
 	sw $t6, doublejump
+	li $t4, BASE_ADDRESS
+	addi $t4, $t4, 8448 # gets top left corner of wing
+	setErasePowerup:
+	li $t5, 32 # max rows/cols
+	li $t3, 0	# let t3 be the row iterating variable
+	erasePowerup:
+		li $t6, 0 # iterating col variable
+		erasePowerupRow:
+			sw $t2, 0($t4)
+			addi $t4, $t4, 4
+			addi $t6, $t6, 4
+			blt $t6, $t5, erasePowerupRow # repeat if less than max col
+		addi, $t3, $t3, 4
+		sub, $t4, $t4, $t5
+   		add $t4, $t4, 256	# go to next row
+   		blt $t3, $t5, erasePowerup	# repeat if less than max row times loop
 	jr $ra
 
 checkDamage:
